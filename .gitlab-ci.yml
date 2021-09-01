@@ -1,0 +1,42 @@
+image: docker
+
+services:
+  - docker:dind
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+
+stages:
+  - build
+  - tag
+
+.build:
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY/$IMAGE_NAME $BASE
+    - docker push $CI_REGISTRY/$IMAGE_NAME:latest
+    - docker tag $CI_REGISTRY/$IMAGE_NAME:latest $CI_REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+
+.tag:
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker pull $CI_REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker tag $CI_REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHORT_SHA $CI_REGISTRY/$IMAGE_NAME:$CI_COMMIT_REF_NAME
+    - docker push $CI_REGISTRY/$IMAGE_NAME:$CI_COMMIT_REF_NAME
+
+build:cli:
+  stage: build
+  except: tag
+  extends: .build
+  variables:
+    BASE: ./cli
+    IMAGE_NAME: zonemaster/zonemaster-cli
+
+tag:cli:
+  stage: tag
+  only: tag
+  extends: .tag
+  variables:
+    IMAGE_NAME: zonemaster/zonemaster-cli
