@@ -28,7 +28,8 @@ stages:
 
 build:cli:
   stage: build
-  except: tag
+  except:
+    - tag
   extends: .build
   variables:
     BASE: ./cli
@@ -36,7 +37,8 @@ build:cli:
 
 tag:cli:
   stage: tag
-  only: tag
+  only:
+    - tag
   extends: .tag
   variables:
     IMAGE_NAME: zonemaster/zonemaster-cli
